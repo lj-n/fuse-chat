@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/google/uuid"
@@ -81,10 +82,14 @@ func newChatHandler(w http.ResponseWriter, r *http.Request) {
 	id := uuid.New().String()
 
 	chat := &Chat{
-		id:    id,
-		conns: make(map[string]*Connection),
+		id:         id,
+		conns:      make(map[string]*Connection),
+		createTime: time.Now(),
+		fuse:       *time.NewTimer(time.Duration(10) * time.Second),
 	}
 	chats[id] = chat
+
+	go chat.startFuse()
 
 	http.Redirect(w, r, "/c/"+id, http.StatusFound)
 }
@@ -130,6 +135,7 @@ func chatSSEHandler(w http.ResponseWriter, r *http.Request) {
 	connection := &Connection{
 		client:  client,
 		receive: make(chan Message),
+		fuseEnd: make(chan bool),
 	}
 	chat.conns[connectionId] = connection
 
@@ -144,6 +150,15 @@ loop:
 	for {
 		select {
 		case <-r.Context().Done():
+			break loop
+		case <-connection.fuseEnd:
+			blowMessage := Message{
+				text:   "Chat has been blown up!",
+				client: client,
+			}
+			fmt.Println("Sending message:", blowMessage.text)
+			blowMessage.sendEvent(w, r, false)
+			flusher.Flush()
 			break loop
 		case message := <-connection.receive:
 			fmt.Println("Sending message:", message.text)

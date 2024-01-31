@@ -4,11 +4,16 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 )
 
+var chats = make(map[string]*Chat)
+
 type Chat struct {
-	id    string
-	conns map[string]*Connection
+	id         string
+	conns      map[string]*Connection
+	createTime time.Time
+	fuse       time.Timer
 }
 
 func (c *Chat) broadcast(message Message) {
@@ -17,9 +22,19 @@ func (c *Chat) broadcast(message Message) {
 	}
 }
 
+func (c *Chat) startFuse() {
+	<-c.fuse.C
+	fmt.Println("Chat fuse blown:", c.id)
+	for _, connection := range c.conns {
+		connection.fuseEnd <- true
+	}
+	delete(chats, c.id)
+}
+
 type Connection struct {
 	client  *Client
 	receive chan Message
+	fuseEnd chan bool
 }
 
 type Client struct {
@@ -46,5 +61,3 @@ func (m *Message) sendEvent(w http.ResponseWriter, r *http.Request, isAuthor boo
 	_, err := fmt.Fprint(w, sb.String())
 	return err
 }
-
-var chats = make(map[string]*Chat)
