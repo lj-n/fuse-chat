@@ -1,0 +1,44 @@
+package main
+
+templ BaseView(title string) {
+	<!DOCTYPE html>
+	<html>
+		<head>
+			<title>{ title }</title>
+			<script src="https://unpkg.com/htmx.org@1.9.10"></script>
+			<script src="https://unpkg.com/htmx.org/dist/ext/sse.js"></script>
+		</head>
+		<body>
+			{ children... }
+		</body>
+	</html>
+}
+
+templ IndexView() {
+	@BaseView("Chat with a Fuse!") {
+		<h1>Chat with a Fuse!</h1>
+		<p>Click the button below to start a chat with a Fuse.</p>
+		<a href="/new">Create New Chat</a>
+	}
+}
+
+templ ChatView(id string) {
+	@BaseView("Chat with a Fuse!") {
+		<h1>Chat: { id }</h1>
+		<div
+			hx-ext="sse"
+			sse-connect={ "/c/" + id + "/sse" }
+			sse-swap="message"
+			hx-swap="beforeend"
+			style="display:flex;flex-direction:column;"
+		/>
+		<form method="post" hx-post hx-on::after-request="this.reset()">
+			<input type="text" name="message"/>
+			<button type="submit">submit</button>
+		</form>
+	}
+}
+
+templ MessageView(message *Message) {
+	<p>{ message.text }</p>
+}
