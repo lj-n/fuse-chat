@@ -73,7 +73,7 @@ func main() {
 				return
 			}
 
-			flusher, ok := w.(http.Flusher)
+			// flusher, ok := w.(http.Flusher)
 			if !ok {
 				http.Error(w, "SSE not supported", http.StatusInternalServerError)
 				return
@@ -83,12 +83,6 @@ func main() {
 			w.Header().Set("Cache-Control", "no-cache")
 			w.Header().Set("Connection", "keep-alive")
 
-			_, cancel := context.WithCancel(r.Context())
-			defer func() {
-				fmt.Println("Client disconnected")
-				cancel()
-			}()
-
 			client := &Client{
 				id:      uuid.New().String(),
 				receive: make(chan Message),
@@ -97,14 +91,25 @@ func main() {
 
 			chat.clients[client] = true
 
-			for message := range client.receive {
-				err := message.sendView(w, r)
-				if err != nil {
-					fmt.Println("Error sending message to client:", err)
-					break
-				}
+			fmt.Println("Client connected:", client.id)
 
-				flusher.Flush()
+			_, cancel := context.WithCancel(r.Context())
+			defer func() {
+				fmt.Println("Client disconnected: ", client.id)
+				delete(chat.clients, client)
+				cancel()
+			}()
+
+		listener:
+			for {
+				select {
+				case <-r.Context().Done():
+					break listener
+				case message := <-client.receive:
+					fmt.Println("Sending message:", message.text)
+					message.sendEvent(w, r)
+					w.(http.Flusher).Flush()
+				}
 			}
 		})
 	})
