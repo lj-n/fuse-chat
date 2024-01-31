@@ -25,6 +25,10 @@ templ IndexView() {
 templ ChatView(id string) {
 	@BaseView("Chat with a Fuse!") {
 		<h1>Chat: { id }</h1>
+		<div>
+			<div>Time remaining:</div>
+			<div hx-get={ "/c/" + id + "/fuse" } hx-trigger="every 1s"/>
+		</div>
 		<div
 			hx-ext="sse"
 			sse-connect={ "/c/" + id + "/sse" }

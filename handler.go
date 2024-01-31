@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/go-chi/chi"
 	"github.com/google/uuid"
@@ -79,19 +78,8 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func newChatHandler(w http.ResponseWriter, r *http.Request) {
-	id := uuid.New().String()
-
-	chat := &Chat{
-		id:         id,
-		conns:      make(map[string]*Connection),
-		createTime: time.Now(),
-		fuse:       *time.NewTimer(time.Duration(10) * time.Second),
-	}
-	chats[id] = chat
-
-	go chat.startFuse()
-
-	http.Redirect(w, r, "/c/"+id, http.StatusFound)
+	chat := newChat()
+	http.Redirect(w, r, "/c/"+chat.id, http.StatusFound)
 }
 
 func chatHandler(w http.ResponseWriter, r *http.Request) {
@@ -112,6 +100,8 @@ func chatMessageHandler(w http.ResponseWriter, r *http.Request) {
 		text:   message,
 		client: client,
 	})
+
+	chat.resetFuse()
 
 	w.WriteHeader(http.StatusNoContent)
 }
@@ -166,4 +156,10 @@ loop:
 			flusher.Flush()
 		}
 	}
+}
+
+func fuseHandler(w http.ResponseWriter, r *http.Request) {
+	chat := r.Context().Value(ctxChatKey).(*Chat)
+
+	fmt.Fprint(w, chat.TimeRemaining())
 }

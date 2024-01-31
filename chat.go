@@ -5,14 +5,19 @@ import (
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/google/uuid"
 )
 
 var chats = make(map[string]*Chat)
+
+const fuseTime = time.Duration(2) * time.Minute
 
 type Chat struct {
 	id         string
 	conns      map[string]*Connection
 	createTime time.Time
+	endTime    time.Time
 	fuse       time.Timer
 }
 
@@ -29,6 +34,34 @@ func (c *Chat) startFuse() {
 		connection.fuseEnd <- true
 	}
 	delete(chats, c.id)
+}
+
+func (c *Chat) resetFuse() {
+	c.fuse.Reset(fuseTime)
+	c.endTime = time.Now().Add(fuseTime)
+}
+
+func (c *Chat) TimeRemaining() string {
+	remaining := time.Until(c.endTime)
+	seconds := int(remaining.Seconds())
+	return fmt.Sprintf("%d seconds", seconds)
+}
+
+func newChat() *Chat {
+	id := uuid.New().String()
+
+	chat := &Chat{
+		id:         id,
+		conns:      make(map[string]*Connection),
+		createTime: time.Now(),
+		endTime:    time.Now().Add(fuseTime),
+		fuse:       *time.NewTimer(fuseTime),
+	}
+	chats[id] = chat
+
+	go chat.startFuse()
+
+	return chat
 }
 
 type Connection struct {

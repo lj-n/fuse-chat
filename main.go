@@ -18,6 +18,7 @@ func main() {
 		r.Use(chatMiddleware)
 		r.Post("/", chatMessageHandler)
 		r.Get("/", chatHandler)
+		r.Get("/fuse", fuseHandler)
 		r.Get("/sse", chatSSEHandler)
 	})
 
