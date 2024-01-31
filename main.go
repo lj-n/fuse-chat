@@ -4,35 +4,11 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"github.com/google/uuid"
 )
-
-type Chat struct {
-	conns map[string]chan Message
-}
-
-func (c *Chat) broadcast(message Message) {
-	for _, conn := range c.conns {
-		conn <- message
-	}
-}
-
-type Message struct {
-	text string
-}
-
-func (m *Message) render(ctx context.Context) (string, error) {
-	buf := &strings.Builder{}
-	err := MessageView(m).Render(ctx, buf)
-	if err != nil {
-		return "", err
-	}
-	return buf.String(), nil
-}
 
 var chats = make(map[string]*Chat)
 
@@ -51,7 +27,7 @@ func main() {
 		id := uuid.New()
 
 		chat := &Chat{
-			conns: make(map[string]chan Message),
+			clients: make(map[*Client]bool),
 		}
 		chats[id.String()] = chat
 
@@ -113,28 +89,18 @@ func main() {
 				cancel()
 			}()
 
-			clientId := uuid.New().String()
-			conn := make(chan Message)
-			chat.conns[clientId] = conn
+			client := &Client{
+				id:      uuid.New().String(),
+				receive: make(chan Message),
+				name:    "Anonymous",
+			}
 
-			for data := range conn {
+			chat.clients[client] = true
 
-				fmt.Println("Sending message to client:", data.text)
-
-				sb := strings.Builder{}
-
-				message, err := data.render(r.Context())
+			for message := range client.receive {
+				err := message.sendView(w, r)
 				if err != nil {
-					fmt.Println("Error rendering message:", err)
-					break
-				}
-
-				sb.WriteString(fmt.Sprintf("event: %s\n", "message"))
-				sb.WriteString(fmt.Sprintf("data: %v\n\n", message))
-
-				_, err = fmt.Fprint(w, sb.String())
-				if err != nil {
-					fmt.Println("Error writing to client:", err)
+					fmt.Println("Error sending message to client:", err)
 					break
 				}
 
