@@ -39,6 +39,9 @@ templ ChatView(id string) {
 	}
 }
 
-templ MessageView(message *Message) {
-	<p>{ message.text }</p>
+templ MessageView(m *Message, isAuthor bool) {
+	<div data-author?={ isAuthor }>
+		<span>{ m.text }</span>
+		<span>{ m.client.name }</span>
+	</div>
 }

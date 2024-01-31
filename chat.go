@@ -7,46 +7,37 @@ import (
 )
 
 type Chat struct {
-	clients map[*Client]bool
+	id    string
+	conns map[string]*Connection
 }
 
 func (c *Chat) broadcast(message Message) {
-	for client := range c.clients {
-		client.receive <- message
+	for _, connection := range c.conns {
+		connection.receive <- message
 	}
 }
 
-type Client struct {
-	id      string
-	name    string
+type Connection struct {
+	client  *Client
 	receive chan Message
 }
 
-func (c *Client) listen(w http.ResponseWriter, r *http.Request) {
-	for {
-		select {
-		case <-r.Context().Done():
-			fmt.Println("Client disconnected:", c.id)
-			return
-		case message := <-c.receive:
-			fmt.Println("Sending message:", message.text)
-			message.sendEvent(w, r)
-		}
-		w.(http.Flusher).Flush()
-	}
+type Client struct {
+	id   string
+	name string
 }
 
 type Message struct {
-	text string
-	// author *Client
+	text   string
+	client *Client
 }
 
-func (m *Message) sendEvent(w http.ResponseWriter, r *http.Request) error {
+func (m *Message) sendEvent(w http.ResponseWriter, r *http.Request, isAuthor bool) error {
 	sb := &strings.Builder{}
 
 	sb.WriteString("event: message\ndata: ")
 
-	if err := MessageView(m).Render(r.Context(), sb); err != nil {
+	if err := MessageView(m, isAuthor).Render(r.Context(), sb); err != nil {
 		return err
 	}
 
@@ -55,3 +46,5 @@ func (m *Message) sendEvent(w http.ResponseWriter, r *http.Request) error {
 	_, err := fmt.Fprint(w, sb.String())
 	return err
 }
+
+var chats = make(map[string]*Chat)
