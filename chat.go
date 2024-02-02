@@ -44,7 +44,17 @@ func (c *Chat) resetFuse() {
 func (c *Chat) TimeRemaining() string {
 	remaining := time.Until(c.endTime)
 	seconds := int(remaining.Seconds())
-	return fmt.Sprintf("%d seconds", seconds)
+	return fmt.Sprintf("Seconds left: %d", seconds)
+}
+
+func (c *Chat) ConnectionStatus() string {
+	return fmt.Sprintf("Connections: %d", len(c.conns))
+}
+
+func (c *Chat) URL() string {
+	// TODO: This is a hack, we should use the router to generate the URL
+	prefix := "http://localhost:5173"
+	return fmt.Sprintf("%s/c/%s", prefix, c.id)
 }
 
 func newChat() *Chat {

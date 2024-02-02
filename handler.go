@@ -84,8 +84,7 @@ func newChatHandler(w http.ResponseWriter, r *http.Request) {
 
 func chatHandler(w http.ResponseWriter, r *http.Request) {
 	chat := r.Context().Value(ctxChatKey).(*Chat)
-
-	err := ChatView(chat.id).Render(r.Context(), w)
+	err := ChatView(chat).Render(r.Context(), w)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
@@ -161,5 +160,8 @@ loop:
 func fuseHandler(w http.ResponseWriter, r *http.Request) {
 	chat := r.Context().Value(ctxChatKey).(*Chat)
 
-	fmt.Fprint(w, chat.TimeRemaining())
+	err := FuseStatusView(chat).Render(r.Context(), w)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+	}
 }
