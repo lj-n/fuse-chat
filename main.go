@@ -1,6 +1,8 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -10,6 +12,11 @@ import (
 )
 
 func main() {
+	var port int
+
+	flag.IntVar(&port, "p", 8080, "Provide a port number")
+	flag.Parse()
+
 	r := chi.NewRouter()
 	// r.Use(middleware.Logger)
 
@@ -37,7 +44,7 @@ func main() {
 	filesDir := http.Dir(filepath.Join(workDir, "static"))
 	FileServer(r, "/static", filesDir)
 
-	http.ListenAndServe(":5173", r)
+	http.ListenAndServe(":"+fmt.Sprint(port), r)
 }
 
 // FileServer conveniently sets up a http.FileServer handler to serve

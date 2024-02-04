@@ -1,4 +1,4 @@
-module github.com/lj-n/go-chat-with-fuse
+module github.com/lj-n/fuse-chat
 
 go 1.21.6
 
