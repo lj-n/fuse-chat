@@ -11,10 +11,13 @@ import (
 	"github.com/go-chi/chi"
 )
 
+var port int
+var domain string
+
 func main() {
-	var port int
 
 	flag.IntVar(&port, "p", 8080, "Provide a port number")
+	flag.StringVar(&domain, "d", "localhost:"+fmt.Sprint(port), "Provide a domain name")
 	flag.Parse()
 
 	r := chi.NewRouter()

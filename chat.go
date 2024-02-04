@@ -45,9 +45,7 @@ func (c *Chat) Age() string {
 }
 
 func (c *Chat) URL() string {
-	// TODO: This is a hack, we should use the router to generate the URL
-	prefix := "http://localhost:5173"
-	return fmt.Sprintf("%s/c/%s", prefix, c.id)
+	return fmt.Sprintf("%s/c/%s", domain, c.id)
 }
 
 // ReceiveMessage broadcasts the given message to all connected clients and adds it to the chat's message history.
