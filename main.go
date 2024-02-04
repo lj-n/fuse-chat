@@ -34,8 +34,8 @@ func main() {
 	})
 
 	workDir, _ := os.Getwd()
-	filesDir := http.Dir(filepath.Join(workDir, "98css"))
-	FileServer(r, "/98css", filesDir)
+	filesDir := http.Dir(filepath.Join(workDir, "static"))
+	FileServer(r, "/static", filesDir)
 
 	http.ListenAndServe(":5173", r)
 }

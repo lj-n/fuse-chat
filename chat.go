@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	ChatDuration time.Duration = time.Duration(2) * time.Minute
+	ChatDuration time.Duration = time.Duration(1) * time.Minute
 )
 
 var chats = make(map[string]*Chat)
@@ -60,7 +60,7 @@ func (c *Chat) ReceiveMessage(m *Message) {
 	c.endTime = time.Now().Add(c.duration)
 }
 
-// StartFuse starts the fuse for the chat.
+// StartFuse starts the "fuse" for the chat.
 // It continuously checks if the time until the chat's end time has elapsed.
 // If the end time has elapsed, it deletes the chat from the chats map.
 func (c *Chat) StartFuse() {
@@ -135,7 +135,9 @@ func NewChatHandler(w http.ResponseWriter, r *http.Request) {
 // If there is an error during rendering, it returns an internal server error.
 func ChatHandler(w http.ResponseWriter, r *http.Request) {
 	chat := r.Context().Value(ContextChatKey).(*Chat)
-	err := ChatView(chat).Render(r.Context(), w)
+	client := r.Context().Value(ContextClientKey).(*Client)
+
+	err := ChatView(chat, client).Render(r.Context(), w)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}

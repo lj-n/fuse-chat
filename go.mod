@@ -9,4 +9,4 @@ require (
 
 require github.com/go-chi/chi v1.5.5
 
-require github.com/dustinkirkland/golang-petname v0.0.0-20231002161417-6a283f1aaaf2 // indirect
+require github.com/dustinkirkland/golang-petname v0.0.0-20231002161417-6a283f1aaaf2

@@ -7,55 +7,10 @@ templ BaseView(title string) {
 			<title>{ title }</title>
 			<meta charset="UTF-8"/>
 			<meta name="viewport" content="width=device-width,initial-scale=1"/>
-			<link rel="stylesheet" href="/98css/98.css"/>
+			<link rel="stylesheet" href="https://unpkg.com/98.css"/>
+			<link rel="stylesheet" href="/static/styles.css"/>
 			<script src="https://unpkg.com/htmx.org@1.9.10"></script>
 			<script src="https://unpkg.com/htmx.org/dist/ext/sse.js"></script>
-			<style type="text/css">
-				html {
-					background-color: #008080;
-				}
-				body {
-					font-family: "Pixelated MS Sans Serif", Arial;
-					margin: 0;
-					padding: 0;
-					min-height: 100vh;
-					display: flex;
-					flex-direction: column;
-				}
-				main {
-					margin: auto;
-				}
-				.window-body {
-					display: flex;
-					flex-direction: column;
-					gap: 4px;
-				}
-				.chat-window {
-					width: 100%;
-					max-width: 600px;
-				}
-				.chat-messages {
-				}
-				.chat-form {
-					display: flex;
-					flex-direction: column;
-					gap: 8px;
-				}
-				.chat-form input {
-					flex-grow: 1;
-				}
-				.chat-form button {
-					margin-left: auto;
-				}
-				.group-header {
-					display: flex;
-					align-items: center;
-					gap: 4px;
-				}
-				.status-bar-field {
-					flex-basis: 100%;
-				}
-			</style>
 		</head>
 		<body>
 			{ children... }
@@ -64,24 +19,23 @@ templ BaseView(title string) {
 }
 
 templ IndexView() {
-	@BaseView("Chat with a Fuse!") {
-		<main>
-			<h2>Chat with a Fuse!</h2>
-			<p>
-				Each chat has a fuse that counts down.
-				If the fuse runs out, the chat closes and deletes itself.
-				Writing a message to the chat resets the fuse.
-			</p>
+	@WindowView("Chat with a Fuse!") {
+		<p>
+			Each chat has a fuse that counts down.
+			If the fuse runs out, the chat closes and deletes itself.
+			Writing a message to the chat resets the fuse.
+		</p>
+		<div class="button-row">
 			<form action="/new">
 				<button type="submit">Create New Chat</button>
 			</form>
-		</main>
+		</div>
 	}
 }
 
 templ WindowView(title string) {
 	@BaseView(title) {
-		<main class="window chat-window">
+		<main class="window">
 			<div class="title-bar">
 				<div class="title-bar-text">{ title }</div>
 				<div class="title-bar-controls">
@@ -99,8 +53,11 @@ templ WindowView(title string) {
 
 templ ChatEndView() {
 	@WindowView("Chat Ended") {
-		<p>This Chat has ended.</p>
-		<div style="display: flex;justify-content: flex-end;gap: 4px;">
+		<div class="chat-end-message">
+			<img src="/static/msg_error-0.png" alt="" width="20" height="20"/>
+			<span>This Chat has ended.</span>
+		</div>
+		<div class="button-row">
 			<form action="/">
 				<button type="submit">Return to Home</button>
 			</form>
@@ -111,31 +68,32 @@ templ ChatEndView() {
 	}
 }
 
-templ ChatView(c *Chat) {
+// hx-on::after-settle workaround: https://github.com/bigskysoftware/htmx/issues/784
+templ ChatView(chat *Chat, client *Client) {
 	@WindowView("Go Chat!") {
 		<fieldset>
 			<legend>
 				<div class="group-header">
-					<img src="/98css/address_book_pad_users.png" alt="" width="20" height="20"/>
+					<img src="/static/address_book_pad_users.png" alt="" width="20" height="20"/>
 					Invite Others
 				</div>
 			</legend>
-			<input type="text" value={ c.URL() } hx-on:click="this.select()" style="width:100%;" readonly/>
+			<input class="url-field" type="text" value={ chat.URL() } hx-on:click="this.select()" readonly/>
 		</fieldset>
 		<fieldset>
 			<legend>
 				<div class="group-header">
-					<img src="/98css/network_normal_two_pcs-4.png" alt="" width="20" height="20"/>
-					Messages
+					<img src="/static/network_normal_two_pcs-4.png" alt="" width="20" height="20"/>
+					Messages | You are: { client.Name }
 				</div>
 			</legend>
 			<div
-				style="height: 360px;padding: 4px;"
 				class="sunken-panel chat-messages"
 				hx-ext="sse"
-				sse-connect={ "/c/" + c.id + "/sse" }
+				sse-connect={ "/c/" + chat.id + "/sse" }
 				sse-swap="message"
 				hx-swap="beforeend"
+				hx-on::after-settle="this.scrollTo(0, this.scrollHeight);"
 			>
 				<div hx-get="/end" hx-trigger="sse:end" hx-swap="none"></div>
 			</div>
@@ -144,7 +102,7 @@ templ ChatView(c *Chat) {
 			<fieldset>
 				<legend id="message-label">
 					<div class="group-header">
-						<img src="/98css/envelope_closed-0.png" alt="" width="20" height="20"/>
+						<img src="/static/envelope_closed-0.png" alt="" width="20" height="20"/>
 						New Message
 					</div>
 				</legend>
@@ -159,27 +117,27 @@ templ ChatView(c *Chat) {
 				</div>
 			</fieldset>
 		</form>
-		@ChatStatusView(c)
+		@ChatStatusView(chat)
 	}
 }
 
 templ MessageView(m *Message, isAuthor bool) {
-	<div data-author?={ isAuthor } style="margin-top: 4px;">
-		<span style="font-weight:bold;">{ m.client.Name }: </span>
+	<div data-author?={ isAuthor } class="message-view">
+		<span class="message-view-author">{ m.client.Name }: </span>
 		<span>{ m.text }</span>
 	</div>
 }
 
-templ ChatStatusView(c *Chat) {
+templ ChatStatusView(chat *Chat) {
 	<div
 		class="status-bar"
-		hx-get={ "/c/" + c.id + "/status" }
+		hx-get={ "/c/" + chat.id + "/status" }
 		hx-trigger="every 1s"
 		hx-swap="outerHTML"
 		hx-target="this"
 	>
-		<p class="status-bar-field">{ c.TimeRemaining() } </p>
-		<p class="status-bar-field">{ c.Connections() }</p>
-		<p class="status-bar-field">{ c.Age() }</p>
+		<p class="status-bar-field">{ chat.TimeRemaining() } </p>
+		<p class="status-bar-field">{ chat.Connections() }</p>
+		<p class="status-bar-field">{ chat.Age() }</p>
 	</div>
 }

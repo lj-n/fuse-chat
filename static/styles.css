@@ -1,0 +1,81 @@
+html {
+  background-color: #008080;
+}
+
+body {
+  font-family: "Pixelated MS Sans Serif", Arial;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+main {
+  margin: auto;
+}
+
+.window {
+  width: 100%;
+  max-width: 600px;
+}
+
+.window-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.button-row {
+  display: flex;
+  gap: 4px;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.chat-end-message {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.chat-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.chat-form input {
+  flex-grow: 1;
+}
+
+.chat-form button {
+  margin-left: auto;
+}
+
+.chat-messages {
+  height: 360px;
+  padding: 4px;
+}
+
+.message-view {
+  margin-top: 4px;
+}
+
+.message-view[data-author] .message-view-author {
+  color: #ff0081;
+}
+
+.group-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.status-bar-field {
+  flex-basis: 100%;
+}
+
+.url-field {
+    width: 100%;
+}
