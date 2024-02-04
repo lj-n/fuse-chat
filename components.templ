@@ -28,7 +28,7 @@ templ BaseView(title string) {
 				.window-body {
 					display: flex;
 					flex-direction: column;
-					gap: 0.5rem;
+					gap: 4px;
 				}
 				.chat-window {
 					width: 100%;
@@ -39,13 +39,21 @@ templ BaseView(title string) {
 				.chat-form {
 					display: flex;
 					flex-direction: column;
-					gap: 1rem;
+					gap: 8px;
 				}
 				.chat-form input {
 					flex-grow: 1;
 				}
 				.chat-form button {
 					margin-left: auto;
+				}
+				.group-header {
+					display: flex;
+					align-items: center;
+					gap: 4px;
+				}
+				.status-bar-field {
+					flex-basis: 100%;
 				}
 			</style>
 		</head>
@@ -71,35 +79,6 @@ templ IndexView() {
 	}
 }
 
-templ ChatView(c *Chat) {
-	@WindowView("Go Chat!") {
-		<div
-			style="height: 360px;"
-			class="sunken-panel chat-messages"
-			hx-ext="sse"
-			sse-connect={ "/c/" + c.id + "/sse" }
-			sse-swap="message"
-			hx-swap="beforeend"
-		></div>
-		<form method="post" hx-post hx-on::after-request="this.reset()" autocomplete="off">
-			<fieldset>
-				<legend id="message-label">Your Message</legend>
-				<div class="chat-form">
-					<input
-						type="text"
-						name="message"
-						placeholder="..."
-						aria-labelledby="message-label"
-						required
-					/>
-					<button type="submit">Send</button>
-				</div>
-			</fieldset>
-		</form>
-		@FuseStatusView(c)
-	}
-}
-
 templ WindowView(title string) {
 	@BaseView(title) {
 		<main class="window chat-window">
@@ -118,23 +97,89 @@ templ WindowView(title string) {
 	}
 }
 
+templ ChatEndView() {
+	@WindowView("Chat Ended") {
+		<p>This Chat has ended.</p>
+		<div style="display: flex;justify-content: flex-end;gap: 4px;">
+			<form action="/">
+				<button type="submit">Return to Home</button>
+			</form>
+			<form action="/new">
+				<button type="submit">Create New Chat</button>
+			</form>
+		</div>
+	}
+}
+
+templ ChatView(c *Chat) {
+	@WindowView("Go Chat!") {
+		<fieldset>
+			<legend>
+				<div class="group-header">
+					<img src="/98css/address_book_pad_users.png" alt="" width="20" height="20"/>
+					Invite Others
+				</div>
+			</legend>
+			<input type="text" value={ c.URL() } hx-on:click="this.select()" style="width:100%;" readonly/>
+		</fieldset>
+		<fieldset>
+			<legend>
+				<div class="group-header">
+					<img src="/98css/network_normal_two_pcs-4.png" alt="" width="20" height="20"/>
+					Messages
+				</div>
+			</legend>
+			<div
+				style="height: 360px;padding: 4px;"
+				class="sunken-panel chat-messages"
+				hx-ext="sse"
+				sse-connect={ "/c/" + c.id + "/sse" }
+				sse-swap="message"
+				hx-swap="beforeend"
+			>
+				<div hx-get="/end" hx-trigger="sse:end" hx-swap="none"></div>
+			</div>
+		</fieldset>
+		<form method="post" hx-post hx-on::after-request="this.reset()" autocomplete="off">
+			<fieldset>
+				<legend id="message-label">
+					<div class="group-header">
+						<img src="/98css/envelope_closed-0.png" alt="" width="20" height="20"/>
+						New Message
+					</div>
+				</legend>
+				<div class="chat-form">
+					<input
+						type="text"
+						name="message"
+						aria-labelledby="message-label"
+						required
+					/>
+					<button type="submit">Send</button>
+				</div>
+			</fieldset>
+		</form>
+		@ChatStatusView(c)
+	}
+}
+
 templ MessageView(m *Message, isAuthor bool) {
-	<div data-author?={ isAuthor }>
+	<div data-author?={ isAuthor } style="margin-top: 4px;">
+		<span style="font-weight:bold;">{ m.client.Name }: </span>
 		<span>{ m.text }</span>
-		<span>{ m.client.name }</span>
 	</div>
 }
 
-templ FuseStatusView(c *Chat) {
+templ ChatStatusView(c *Chat) {
 	<div
 		class="status-bar"
-		hx-get={ "/c/" + c.id + "/fuse" }
+		hx-get={ "/c/" + c.id + "/status" }
 		hx-trigger="every 1s"
 		hx-swap="outerHTML"
 		hx-target="this"
 	>
 		<p class="status-bar-field">{ c.TimeRemaining() } </p>
-		<p class="status-bar-field">{ c.ConnectionStatus() }</p>
-		<p class="status-bar-field">Messages: 123</p>
+		<p class="status-bar-field">{ c.Connections() }</p>
+		<p class="status-bar-field">{ c.Age() }</p>
 	</div>
 }

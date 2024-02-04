@@ -7,22 +7,30 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi"
-	"github.com/go-chi/chi/middleware"
 )
 
 func main() {
 	r := chi.NewRouter()
-	r.Use(middleware.Logger)
+	// r.Use(middleware.Logger)
 
-	r.Get("/", indexHandler)
-	r.Get("/new", newChatHandler)
+	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		err := IndexView().Render(r.Context(), w)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	})
+	r.Get("/new", NewChatHandler)
+	r.Get("/end", EndChatHandler)
 
 	r.Route("/c/{chatId}", func(r chi.Router) {
-		r.Use(chatMiddleware)
-		r.Post("/", chatMessageHandler)
-		r.Get("/", chatHandler)
-		r.Get("/fuse", fuseHandler)
-		r.Get("/sse", chatSSEHandler)
+		r.Group(func(r chi.Router) {
+			r.Use(ChatMiddleware)
+			r.Get("/", ChatHandler)
+			r.Post("/", PostMessageHandler)
+			r.Get("/sse", ReceiveMessageHandler)
+		})
+
+		r.Get("/status", ChatStatusHandler)
 	})
 
 	workDir, _ := os.Getwd()
