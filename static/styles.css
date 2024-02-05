@@ -1,3 +1,7 @@
+* {
+  box-sizing: border-box;
+}
+
 html {
   background-color: #008080;
 }
@@ -5,10 +9,11 @@ html {
 body {
   font-family: "Pixelated MS Sans Serif", Arial;
   margin: 0;
-  padding: 0;
+  padding: 0 4px;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  overscroll-behavior: none;
 }
 
 main {
@@ -77,5 +82,5 @@ main {
 }
 
 .url-field {
-    width: 100%;
+  width: 100%;
 }
